@@ -80,3 +80,48 @@ A command-line chatbot using free AI APIs.
 * Add structured JSON mode
 * Refactor code into cleaner components
 * Compare Groq and Gemini API designs
+
+## Day 3 Progress
+
+### Completed
+
+* Added provider selection menu (`Groq` / `Gemini`)
+* Implemented provider abstraction using a common `bot_reply` variable
+* Initialized Gemini API and compared its SDK structure with Groq
+* Learned differences between OpenAI-compatible syntax and Gemini syntax
+* Reused API client objects instead of recreating them inside the loop
+* Understood why conversation memory works differently across providers
+* Simulated conversation history for Gemini by converting messages into a single prompt
+* Built a provider-independent response flow
+* Encountered and debugged real-world API issues
+* Investigated model naming, SDK deprecation, and quota limitations
+* Designed the chatbot architecture to support future providers
+
+### Key Concepts Learned
+
+* Provider Abstraction
+* Common Interface Design
+* Reusable API Clients
+* OpenAI-Compatible Syntax
+* Differences Between SDK Designs
+* Memory Simulation in LLMs
+* Prompt Construction
+* API Versioning
+* SDK Deprecation
+* Rate Limits and Quota Errors
+* Infrastructure vs Code Bugs
+
+### Current Status
+
+✅ Chatbot architecture now supports multiple providers through a unified interface.
+
+⚠️ Gemini integration is temporarily blocked by external quota limitations, but the design is ready and extensible.
+
+### Next Steps
+
+* Implement JSON mode (`/json`)
+* Generate structured outputs
+* Improve error handling
+* Refactor code into cleaner components
+* Add token usage support for Gemini
+* Polish and prepare the project for GitHub showcase
