@@ -125,3 +125,48 @@ A command-line chatbot using free AI APIs.
 * Refactor code into cleaner components
 * Add token usage support for Gemini
 * Polish and prepare the project for GitHub showcase
+
+## Day 4 Progress
+
+### Completed
+
+* Added a special `/json` command to enable structured output mode
+* Implemented prompt engineering to instruct the model to return JSON responses
+* Designed a fixed JSON schema with `topic` and `summary` fields
+* Learned why LLMs can generate invalid or inconsistent JSON
+* Converted JSON strings into Python dictionaries using `json.loads()`
+* Converted Python dictionaries back into formatted JSON using `json.dumps()`
+* Added exception handling for invalid JSON responses
+* Safely accessed dictionary values using `.get()`
+* Handled missing keys without crashing the program
+* Implemented pretty printing for human-readable JSON output
+* Preserved original text responses inside conversation history
+* Built the foundation for machine-readable AI outputs
+
+### Key Concepts Learned
+
+* Structured Outputs
+* Prompt Engineering
+* JSON Schema Design
+* JSON Parsing (`json.loads`)
+* JSON Serialization (`json.dumps`)
+* Exception Handling (`try-except`)
+* `JSONDecodeError`
+* Dictionary Access (`[]` vs `.get()`)
+* Missing Keys vs Extra Keys
+* Defensive Programming
+* Human-Readable vs Machine-Readable Data
+
+### Current Status
+
+✅ Chatbot can now generate structured JSON responses and safely process them into Python dictionaries.
+
+### Next Steps
+
+* Refactor code into cleaner modules
+* Accept custom system prompts from users
+* Improve error handling and architecture
+* Add token usage support for Gemini
+* Migrate to newer Gemini SDK
+* Polish and prepare the project for GitHub showcase
+
