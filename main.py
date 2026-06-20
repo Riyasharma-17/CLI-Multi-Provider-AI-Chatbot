@@ -1,74 +1,47 @@
 from dotenv import load_dotenv
-from groq import Groq
-import os
-import google.generativeai as genai
-import json
+from providers.gemini_provider import chat_with_gemini
+from providers.groq_provider import chat_with_groq
+from providers.openrouter_provider import chat_with_openrouter
+from utils.json_utils import display_response
+from utils.system_utils import create_system_message
+from utils.command_utils import handle_command
+from utils.json_mode_utils import check_json_mode
+from utils.provider_utils import choose_provider
 
 load_dotenv(override=True)
 
-groq_api_key = os.getenv("GROQ_API_KEY")
-gemini_api_key = os.getenv("GEMINI_API_KEY")
-
-client = Groq(api_key=groq_api_key)
-genai.configure(api_key=gemini_api_key)
-
-gemini_model = genai.GenerativeModel(
-    "gemini-2.0-flash"
-)
-print("Gemini initialized successfully.")
-
-system_message = {
-    "role": "system",
-    "content": "You are a helpful assistant."
-}
+system_message = create_system_message()
 
 messages = [system_message]
-print("Choose Provider:")
-print("[1] Groq")
-print("[2] Gemini")
 
-choice = input("Enter choice: ")
+provider = choose_provider()
 
-if choice == "1":
-    provider = "groq"
-
-elif choice == "2":
-    print("Gemini temporarily unavailable.")
-    provider = "groq"
-else:
-    print("Invalid choice.")
-    raise SystemExit
-
-print("Using:" , provider)
-
+print("Using:", provider)
 
 while True:
+
     user_input = input("You: ")
 
-    json_mode = False
+    json_mode, user_input = check_json_mode(user_input)
 
-    if user_input.startswith("/json"):
-        json_mode = True
-        user_input = user_input.replace("/json", "", 1).strip()
+    should_quit, new_messages = handle_command(
+        user_input,
+        system_message
+    )
 
-        print("JSON mode:", json_mode)
-        print("Question:", user_input)
-
-    if user_input == "/quit":
-        print("Goodbye!")
+    if should_quit:
         break
 
-    if user_input == "/clear":
-        messages = [system_message]
-        print("Conversation history cleared!")
+    if new_messages:
+        messages = new_messages
         continue
 
     if json_mode:
         messages.append(    #here chats will get append at last one by one
             {
                 "role": "user",  #role -> each role-persons may chnge.
-                "content": 
-                f""" 
+                "content":
+                f"""
     Return ONLY valid JSON.
 
     Use this format:
@@ -80,84 +53,47 @@ while True:
     Question:
     {user_input}
     """
-        }
-    )
-        
+            }
+        )
+
     else:
         messages.append(
             {
-            "role": "user",
-            "content": user_input
+                "role": "user",
+                "content": user_input
             }
         )
 
     print(messages)
 
-    
     if provider == "groq":
-        response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=messages
+        bot_reply, input_tokens, output_tokens = (
+            chat_with_groq(messages)
         )
 
-        bot_reply = response.choices[0].message.content #Extracts text from Groq's response object.
-    
     elif provider == "gemini":
-        conversation = ""
+        bot_reply, input_tokens, output_tokens = (
+            chat_with_gemini(messages)
+        )
 
-        for message in messages:
-            conversation += (
-                f"{message['role']}: "
-                f"{message['content']}\n"
-            )
+    elif provider == "openrouter":
+        bot_reply,input_tokens,output_tokens = (
+            chat_with_openrouter(messages)
+        )
 
-        response = gemini_model.generate_content(conversation) #sends the whole transcript.
+    display_response(bot_reply, json_mode)
 
-        bot_reply = response.text
-
-    if not json_mode:
-        print("Bot:", bot_reply)
-
-    if json_mode:
-        try:
-             data = json.loads(bot_reply)  #-> json string to py dictionary.
-             
-             pretty_json = json.dumps(  #.dumps()->Python dict to json text
-                 data,
-                 indent=4 #Add spaces and line breaks
-             )
-
-             print(pretty_json)
-             print("\nParsed JSON:")
-            #  print("Topic:", data.get("topic", "Not found"))  #Try to give me summary. If missing, return None.
-            #  print("Summary:", data.get("summary", "Not found"))
-
-        except json.JSONDecodeError:
-            print("\nInvalid JSON received!")
-
-        
-
-
-    
     messages.append(
-{
-    "role": "assistant",
-    "content": bot_reply
-}
-)
-    if provider == "groq":
-        print("\nToken Usage:")
-        print("Input Tokens:", response.usage.prompt_tokens)
-        print("Output Tokens:", response.usage.completion_tokens)
+        {
+            "role": "assistant",
+            "content": bot_reply
+            #extracts the actual text generated by the model.
+        }
+    )
 
-
-
-
-
-
-
-
-
+    print("\nToken Usage:")
+    print("Input Tokens:", input_tokens)
+    print("Output Tokens:", output_tokens)
 
 
 #response:- Ye pura object hai jo API se aata hai jab tum client.chat.completions.create(...) call karte ho.
