@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 from groq import Groq
 import os
 import google.generativeai as genai
+import json
 
 load_dotenv(override=True)
 
@@ -44,6 +45,15 @@ print("Using:" , provider)
 while True:
     user_input = input("You: ")
 
+    json_mode = False
+
+    if user_input.startswith("/json"):
+        json_mode = True
+        user_input = user_input.replace("/json", "", 1).strip()
+
+        print("JSON mode:", json_mode)
+        print("Question:", user_input)
+
     if user_input == "/quit":
         print("Goodbye!")
         break
@@ -53,12 +63,33 @@ while True:
         print("Conversation history cleared!")
         continue
 
-    messages.append(    #here chats will get append at last one by one
-        {
-            "role": "user",  #role -> each role-persons may chnge.
-            "content": user_input
+    if json_mode:
+        messages.append(    #here chats will get append at last one by one
+            {
+                "role": "user",  #role -> each role-persons may chnge.
+                "content": 
+                f""" 
+    Return ONLY valid JSON.
+
+    Use this format:
+    {{
+        "topic" : "...",
+        "summary" : "..."
+    }}
+
+    Question:
+    {user_input}
+    """
         }
     )
+        
+    else:
+        messages.append(
+            {
+            "role": "user",
+            "content": user_input
+            }
+        )
 
     print(messages)
 
@@ -84,7 +115,26 @@ while True:
 
         bot_reply = response.text
 
-    print("Bot:", bot_reply)
+    if not json_mode:
+        print("Bot:", bot_reply)
+
+    if json_mode:
+        try:
+             data = json.loads(bot_reply)  #-> json string to py dictionary.
+             
+             pretty_json = json.dumps(  #.dumps()->Python dict to json text
+                 data,
+                 indent=4 #Add spaces and line breaks
+             )
+
+             print(pretty_json)
+             print("\nParsed JSON:")
+            #  print("Topic:", data.get("topic", "Not found"))  #Try to give me summary. If missing, return None.
+            #  print("Summary:", data.get("summary", "Not found"))
+
+        except json.JSONDecodeError:
+            print("\nInvalid JSON received!")
+
         
 
 
