@@ -1,281 +1,220 @@
-# CLI QA Bot
+# CLI Multi-Provider AI Chatbot
 
-A command-line chatbot using free AI APIs.
-
-## Day 1 Progress
-
-### Completed
-
-* Set up professional Python project structure
-* Created and activated a virtual environment (`venv`)
-* Installed required dependencies:
-
-  * `groq`
-  * `google-generativeai`
-  * `python-dotenv`
-* Configured secure API key management using `.env`
-* Connected Python application to Groq API
-* Made the first successful API call using **Llama 3.1 8B Instant**
-* Retrieved and displayed AI-generated responses
-* Displayed token usage information
-* Configured GitHub security practices (`.gitignore`, secret management)
-
-### Key Concepts Learned
-
-* Virtual Environments
-* Environment Variables (`.env`)
-* API Authentication
-* SDKs and API Clients
-* LLM Request → Response Flow
-* Basic AI Engineering Debugging
-
-### Current Status
-
-✅ Python can successfully communicate with Groq's Llama 3.1 model and receive responses.
-
-### Next Steps
-
-* Build interactive CLI chat loop
-* Accept user input dynamically
-* Maintain conversation history
-* Add chatbot memory and context handling
-
-## Day 2 Progress
-
-### Completed
-
-* Built an interactive CLI chat loop using `while True`
-* Added graceful exit with `/quit`
-* Replaced hardcoded prompts with dynamic user input
-* Implemented conversation history using a `messages` list
-* Stored both user and assistant messages
-* Enabled context-aware conversations (chat memory)
-* Added system prompts to control assistant behavior
-* Tested different assistant personalities
-* Implemented `/clear` to reset conversation history
-* Preserved system instructions while clearing memory
-* Verified multi-turn memory and context retention
-
-### Key Concepts Learned
-
-* Infinite Loops (`while True`)
-* `break` and `continue`
-* Lists and Dictionaries
-* Message Roles (`system`, `user`, `assistant`)
-* Conversation History
-* Simulated Memory in LLMs
-* System Prompts and AI Behavior
-* Context Windows and Token Growth
-* Stateful vs Stateless Interactions
-
-### Current Status
-
-✅ Chatbot supports continuous conversations with memory, system instructions, and history reset.
-
-### Next Steps
-
-* Add provider selection (Groq / Gemini)
-* Implement Gemini integration
-* Accept custom system prompts from users
-* Add structured JSON mode
-* Refactor code into cleaner components
-* Compare Groq and Gemini API designs
-
-## Day 3 Progress
-
-### Completed
-
-* Added provider selection menu (`Groq` / `Gemini`)
-* Implemented provider abstraction using a common `bot_reply` variable
-* Initialized Gemini API and compared its SDK structure with Groq
-* Learned differences between OpenAI-compatible syntax and Gemini syntax
-* Reused API client objects instead of recreating them inside the loop
-* Understood why conversation memory works differently across providers
-* Simulated conversation history for Gemini by converting messages into a single prompt
-* Built a provider-independent response flow
-* Encountered and debugged real-world API issues
-* Investigated model naming, SDK deprecation, and quota limitations
-* Designed the chatbot architecture to support future providers
-
-### Key Concepts Learned
-
-* Provider Abstraction
-* Common Interface Design
-* Reusable API Clients
-* OpenAI-Compatible Syntax
-* Differences Between SDK Designs
-* Memory Simulation in LLMs
-* Prompt Construction
-* API Versioning
-* SDK Deprecation
-* Rate Limits and Quota Errors
-* Infrastructure vs Code Bugs
-
-### Current Status
-
-✅ Chatbot architecture now supports multiple providers through a unified interface.
-
-⚠️ Gemini integration is temporarily blocked by external quota limitations, but the design is ready and extensible.
-
-### Next Steps
-
-* Implement JSON mode (`/json`)
-* Generate structured outputs
-* Improve error handling
-* Refactor code into cleaner components
-* Add token usage support for Gemini
-* Polish and prepare the project for GitHub showcase
-
-## Day 4 Progress
-
-### Completed
-
-* Added a special `/json` command to enable structured output mode
-* Implemented prompt engineering to instruct the model to return JSON responses
-* Designed a fixed JSON schema with `topic` and `summary` fields
-* Learned why LLMs can generate invalid or inconsistent JSON
-* Converted JSON strings into Python dictionaries using `json.loads()`
-* Converted Python dictionaries back into formatted JSON using `json.dumps()`
-* Added exception handling for invalid JSON responses
-* Safely accessed dictionary values using `.get()`
-* Handled missing keys without crashing the program
-* Implemented pretty printing for human-readable JSON output
-* Preserved original text responses inside conversation history
-* Built the foundation for machine-readable AI outputs
-
-### Key Concepts Learned
-
-* Structured Outputs
-* Prompt Engineering
-* JSON Schema Design
-* JSON Parsing (`json.loads`)
-* JSON Serialization (`json.dumps`)
-* Exception Handling (`try-except`)
-* `JSONDecodeError`
-* Dictionary Access (`[]` vs `.get()`)
-* Missing Keys vs Extra Keys
-* Defensive Programming
-* Human-Readable vs Machine-Readable Data
-
-### Current Status
-
-✅ Chatbot can now generate structured JSON responses and safely process them into Python dictionaries.
-
-### Next Steps
-
-* Refactor code into cleaner modules
-* Accept custom system prompts from users
-* Improve error handling and architecture
-* Add token usage support for Gemini
-* Migrate to newer Gemini SDK
-* Polish and prepare the project for GitHub showcase
-
-## Day 5 Progress
-
-### Completed
-
-* Refactored the project into a modular architecture instead of keeping everything inside one giant `main.py`
-* Created a dedicated `providers/` folder for API-specific code
-* Moved Groq API logic into `groq_provider.py`
-* Encapsulated API calls inside reusable functions like `chat_with_groq()`
-* Removed direct dependency on the Groq client from `main.py`
-* Created a `utils/` folder for reusable helper functions
-* Moved JSON parsing and response formatting into `json_utils.py`
-* Moved system prompt creation into `system_utils.py`
-* Added support for custom system prompts entered by users at startup
-* Moved command handling (`/quit`, `/clear`) into `command_utils.py`
-* Moved JSON mode detection into `json_mode_utils.py`
-* Moved provider selection into `provider_utils.py`
-* Reduced complexity inside `main.py` and transformed it into a clean application controller
-* Learned how to separate responsibilities between files
-* Fixed debugging issues caused by missing `return` statements
-* Improved architecture without changing chatbot behavior
-
-### Key Concepts Learned
-
-* Refactoring
-* Separation of Concerns
-* Modular Architecture
-* Utility Modules
-* Provider Abstraction
-* Function Encapsulation
-* Single Responsibility Principle
-* Clean Code Practices
-* Return Values vs Local Variables
-* Debugging Logical Errors
-* Reusability
-* Maintainability
-
-### Current Status
-
-✅ The chatbot architecture has been successfully refactored into a modular and maintainable structure.
-
-### Next Steps
-
-* Add robust exception handling
-* Integrate Gemini as a dedicated provider
-* Support multiple LLM providers through a common interface
-* Improve reliability when external APIs fail
-* Continue polishing the project architecture
+> A command-line chatbot that talks to Groq, Gemini, or OpenRouter through one unified interface — switch providers without touching application logic.
 
 ---
 
-## Day 6 Progress
+## What This Is
 
-### Completed
+Most beginner chatbot projects hardcode a single API call and stop there. This one is built around a harder, more useful question: what happens when you need to support more than one LLM provider, and they don't agree on how to do anything?
 
-* Created `gemini_provider.py` and separated Gemini-specific code from the main application
-* Learned how Gemini differs from OpenAI-compatible APIs
-* Simulated conversation memory for Gemini by converting messages into a transcript
-* Added exception handling to prevent provider failures from crashing the chatbot
-* Investigated model naming errors and API deprecation warnings
-* Encountered real-world quota limitations with Gemini and learned to distinguish infrastructure problems from coding mistakes
-* Created `openrouter_provider.py`
-* Added OpenRouter support as a third provider
-* Implemented a common provider interface across Groq, Gemini and OpenRouter
-* Learned that different providers can expose different APIs while presenting the same interface to the application
-* Debugged OpenRouter model availability errors
-* Switched to a working free model configuration
-* Successfully achieved true multi-provider support
-* Verified that conversation memory and JSON mode work independently of the selected provider
-* Completed the core architecture of the chatbot
+Groq follows the OpenAI-compatible message format. Gemini doesn't. Each has different SDKs, different ways of handling conversation history, different error behavior, and different quota systems. This project builds a common interface across all three — so the application layer never needs to know which provider is actually answering.
 
-### Key Concepts Learned
+The result is a working CLI chatbot with memory, customizable system prompts, structured JSON output, and runtime provider switching.
 
-* Multi-Provider Architecture
-* Interface Abstraction
-* API Agnostic Design
-* Exception Handling
-* Defensive Programming
-* External Service Failures
-* Quota Limits and Rate Limiting
-* Infrastructure vs Code Bugs
-* Error Propagation
-* Provider Independence
-* Prompt Serialization
-* Robust System Design
+---
 
-### Current Status
+## The Problem
 
-✅ The chatbot now supports multiple providers through a common interface.
+If you build a chatbot around one provider's SDK, you've built a chatbot that breaks the moment that provider hits a rate limit, deprecates a model, or goes down. Real systems need to be provider-agnostic.
 
-✅ Core project architecture is complete.
+The harder problem: providers don't share a common API shape.
 
-Supported providers:
+- Groq exposes an OpenAI-compatible `messages` list (`system` / `user` / `assistant` roles)
+- Gemini does not — conversation history has to be serialized differently
+- Each SDK has its own client setup, error types, and response structure
 
-* Groq
-* Gemini
-* OpenRouter
+This project solves that by designing a common interface and writing a dedicated adapter per provider behind it — a small-scale version of the abstraction pattern real systems use to stay vendor-independent.
 
-Supported features:
+---
 
-* Memory
-* System Prompts
-* JSON Mode
-* `/quit`
-* `/clear`
-* Token Usage Tracking
-* Exception Handling
-* Modular Architecture
+## How It Works
 
+```
+                    ┌─────────────────┐
+                    │   CLI Input     │
+                    └────────┬────────┘
+                             │
+                             ▼
+                  ┌─────────────────────┐
+                  │   Command Router     │  ← /quit, /clear, /json
+                  └──────────┬───────────┘
+                             │
+                             ▼
+                  ┌─────────────────────┐
+                  │  Conversation State  │  ← messages list (system/user/assistant)
+                  └──────────┬───────────┘
+                             │
+                             ▼
+                  ┌─────────────────────┐
+                  │  Provider Selector   │  ← chosen at startup
+                  └──────────┬───────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              ▼              ▼              ▼
+       ┌───────────┐  ┌───────────┐  ┌──────────────┐
+       │   Groq    │  │  Gemini   │  │  OpenRouter   │
+       │ Provider  │  │ Provider  │  │   Provider    │
+       └─────┬─────┘  └─────┬─────┘  └──────┬────────┘
+             │              │               │
+             └──────────────┼───────────────┘
+                             ▼
+                  ┌─────────────────────┐
+                  │   Common Response    │  ← normalized output, regardless of provider
+                  └──────────┬───────────┘
+                             │
+                             ▼
+                  ┌─────────────────────┐
+                  │  JSON Mode Handler   │  ← optional structured parsing
+                  └──────────┬───────────┘
+                             │
+                             ▼
+                  ┌─────────────────────┐
+                  │   Output to CLI      │
+                  └─────────────────────┘
+```
 
+Each provider module implements the same contract: take conversation history in, return a normalized response out. The rest of the application never branches on which provider is active.
+
+---
+
+## Project Structure
+
+```
+cli-multi-provider-chatbot/
+│
+├── main.py                    # Application controller — orchestrates the chat loop
+│
+├── providers/
+│   ├── groq_provider.py       # Groq API adapter (OpenAI-compatible)
+│   ├── gemini_provider.py     # Gemini API adapter (transcript-based memory)
+│   └── openrouter_provider.py # OpenRouter API adapter
+│
+├── utils/
+│   ├── json_utils.py          # JSON parsing, validation, pretty-printing
+│   ├── system_utils.py        # System prompt construction
+│   ├── command_utils.py       # /quit, /clear command handling
+│   ├── json_mode_utils.py     # JSON mode detection and routing
+│   └── provider_utils.py      # Provider selection logic
+│
+├── .env                        # API keys (not committed)
+├── requirements.txt
+└── README.md
+```
+
+`main.py` does not know how Gemini formats a prompt. `groq_provider.py` does not know what JSON mode is. Each module owns exactly one responsibility — which is what made it possible to add a third provider (OpenRouter) without touching the first two.
+
+---
+
+## Tech Stack
+
+| Component | Choice | Why |
+|---|---|---|
+| LLM Providers | Groq, Gemini, OpenRouter | All offer usable free tiers — good for comparing API design without cost pressure |
+| Provider interface | Custom adapter pattern | No existing abstraction fit three structurally different APIs cleanly |
+| Structured output | Prompt-engineered JSON + `json.loads()` | LLMs don't guarantee valid JSON — defensive parsing required |
+| Env management | `python-dotenv` | Standard practice for API key security |
+| Architecture | Modular (`providers/`, `utils/`) | Built after the monolithic version became hard to extend |
+
+LangChain was deliberately not used. The goal was to understand what a provider abstraction layer actually has to handle — message formatting, memory serialization, error normalization — before relying on a framework to hide it.
+
+---
+
+## Key Engineering Decisions
+
+### Provider Abstraction Before Adding a Third Provider
+
+The first version hardcoded Groq calls directly into the main loop. Adding Gemini meant duplicating the loop with provider-specific branches, which immediately became unmaintainable. The fix was defining a common interface (`chat_with_provider(messages) → response`) before adding OpenRouter, so the third provider took a fraction of the effort the second one did.
+
+### Memory Simulation for Non-Compatible APIs
+
+Groq accepts a `messages` list directly. Gemini does not work the same way — conversation history had to be serialized into a single transcript string per call. This meant building a translation layer between the application's internal message format and what each provider's SDK actually expects.
+
+### Defensive JSON Parsing
+
+Prompting a model to "return JSON" does not guarantee valid JSON. Malformed output, missing fields, and inconsistent formatting all happened during testing. The fix was wrapping all parsing in `try/except` around `json.loads()`, using `.get()` instead of direct key access, and never letting a bad response crash the conversation loop.
+
+### Refactor Before Feature Creep
+
+By Day 5, `main.py` had grown into a single file handling routing, provider logic, JSON parsing, and command handling at once. Refactoring into `providers/` and `utils/` happened before adding OpenRouter — adding a third provider to the monolithic version would have made the file close to unreadable.
+
+---
+
+## Challenges
+
+**Providers fail differently, and the application has to survive all of them.**
+
+Gemini's free tier hit quota limits during development. Initially this looked like a code bug. It wasn't. Distinguishing an infrastructure failure (rate limit, deprecated model name) from an actual logic error required reading error messages carefully and testing providers independently rather than assuming the most recent code change broke something.
+
+This shaped the exception handling strategy: provider failures are caught and reported, not allowed to crash the whole application.
+
+**Conversation memory isn't a universal concept across APIs.**
+
+"Memory" in this project means resending the full conversation on every call. Groq supports this natively through its message list. Gemini required manually reconstructing a transcript on every turn — a reminder that "the model remembers" is an illusion the application maintains, not something the API does on its own.
+
+---
+
+## What I Learned
+
+- **Abstraction earns its cost only when you actually need it twice.** The interface design for two providers looked over-engineered until the third provider took an hour instead of a day.
+- **LLM APIs are not interchangeable**, even when they solve the same problem. Message formats, memory handling, and error types all differ — switching providers is real integration work, not a config change.
+- **Defensive programming matters more with LLM output than typical APIs.** A REST API has a schema. An LLM asked for JSON is making a best effort. Code has to assume the response might be wrong.
+- **Refactor when the file becomes hard to extend, not when it becomes hard to read.** The monolith was still readable at Day 4 — it was extending it that became painful, which was the actual signal to modularize.
+- **Infrastructure problems and code problems look identical from the outside.** A quota error and a logic bug can produce the same symptom. Isolating the provider in question before debugging the application saved time.
+
+---
+
+## Limitations
+
+This is a learning project, and a few gaps are intentional scope cuts rather than oversights:
+
+- **No streaming responses** — replies are returned in full, not token-by-token
+- **No persistent storage** — conversation history resets when the program exits
+- **No automated tests** — provider adapters were verified manually
+- **No retry/backoff logic** — a failed call requires the user to retry manually
+- **Single JSON schema** — structured output mode uses a fixed `topic` / `summary` shape, not a configurable one
+
+---
+
+## Future Improvements
+
+- [ ] Add streaming output for real-time response display
+- [ ] Persist conversation history to disk (JSON or SQLite) between sessions
+- [ ] Add retry logic with exponential backoff for transient API failures
+- [ ] Support configurable JSON schemas instead of a single fixed structure
+- [ ] Add unit tests for each provider adapter using mocked API responses
+- [ ] Token usage tracking across all three providers, not just Groq
+
+---
+
+## Running Locally
+
+```bash
+git clone https://github.com/Riyasharma-17/CLI-Multi-Provider-AI-Chatbot
+cd CLI-Multi-Provider-AI-Chatbot
+pip install -r requirements.txt
+```
+
+Create a `.env` file with whichever provider keys you have:
+```
+GROQ_API_KEY=your_key_here
+GEMINI_API_KEY=your_key_here
+OPENROUTER_API_KEY=your_key_here
+```
+
+Run it:
+```bash
+python main.py
+```
+
+You'll be prompted to choose a provider, then optionally set a custom system prompt. Commands available mid-conversation:
+
+| Command | Effect |
+|---|---|
+| `/quit` | Exit the chatbot |
+| `/clear` | Reset conversation history (system prompt preserved) |
+| `/json` | Toggle structured JSON output mode |
+
+---
+
+*Built to understand what a real provider-agnostic AI integration actually requires — message formatting, memory handling, and failure isolation — before relying on a framework to abstract it away.*
