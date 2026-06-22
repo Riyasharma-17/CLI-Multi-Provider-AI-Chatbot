@@ -105,6 +105,17 @@ cli-multi-provider-chatbot/
 `main.py` does not know how Gemini formats a prompt. `groq_provider.py` does not know what JSON mode is. Each module owns exactly one responsibility — which is what made it possible to add a third provider (OpenRouter) without touching the first two.
 
 ---
+## Demo
+
+![CLI QA Bot Demo](clibot.gif)
+
+A short terminal demo showing:
+
+- Custom system prompts
+- Runtime provider switching
+- Conversation memory
+- Structured JSON output
+- Graceful shutdown with `/quit`
 
 ## Tech Stack
 
@@ -115,6 +126,15 @@ cli-multi-provider-chatbot/
 | Structured output | Prompt-engineered JSON + `json.loads()` | LLMs don't guarantee valid JSON — defensive parsing required |
 | Env management | `python-dotenv` | Standard practice for API key security |
 | Architecture | Modular (`providers/`, `utils/`) | Built after the monolithic version became hard to extend |
+
+## Development Tooling
+
+| Tool | Purpose |
+|---|---|
+| pytest | Automated testing and mocking |
+| unittest.mock | Simulating provider responses and failures |
+| requirements.txt | Reproducible dependency management |
+| python-dotenv | Secure API key handling |
 
 LangChain was deliberately not used. The goal was to understand what a provider abstraction layer actually has to handle — message formatting, memory serialization, error normalization — before relying on a framework to hide it.
 
@@ -152,6 +172,34 @@ This shaped the exception handling strategy: provider failures are caught and re
 
 "Memory" in this project means resending the full conversation on every call. Groq supports this natively through its message list. Gemini required manually reconstructing a transcript on every turn — a reminder that "the model remembers" is an illusion the application maintains, not something the API does on its own.
 
+## Reliability and Testing
+
+Defensive code is only useful if it is actually verified. JSON parsing and provider adapters were intentionally wrapped in exception handling, but manual testing alone wasn't enough to justify those design decisions.
+
+Pytest-based tests were added to validate both successful and failure scenarios.
+
+Current test coverage includes:
+
+- Valid JSON responses
+- Malformed JSON responses
+- Normal text output mode
+- Successful Groq responses
+- Groq API failures
+- Successful Gemini responses
+- Gemini quota/API failures
+- Successful OpenRouter responses
+- OpenRouter failures
+
+Provider tests use mocked responses instead of real API calls, allowing error paths to be tested without depending on network connectivity or external services.
+
+At the moment:
+
+```
+9 passed
+```
+
+This transformed defensive programming from a claim into something reproducible and verifiable.
+
 ---
 
 ## What I Learned
@@ -170,7 +218,8 @@ This is a learning project, and a few gaps are intentional scope cuts rather tha
 
 - **No streaming responses** — replies are returned in full, not token-by-token
 - **No persistent storage** — conversation history resets when the program exits
-- **No automated tests** — provider adapters were verified manually
+- - **No retry/backoff logic** — a failed call requires the user to retry manually
+- **Single JSON schema** — structured output mode uses a fixed `topic` / `summary` shape, not a configurable one
 - **No retry/backoff logic** — a failed call requires the user to retry manually
 - **Single JSON schema** — structured output mode uses a fixed `topic` / `summary` shape, not a configurable one
 
@@ -182,7 +231,7 @@ This is a learning project, and a few gaps are intentional scope cuts rather tha
 - [ ] Persist conversation history to disk (JSON or SQLite) between sessions
 - [ ] Add retry logic with exponential backoff for transient API failures
 - [ ] Support configurable JSON schemas instead of a single fixed structure
-- [ ] Add unit tests for each provider adapter using mocked API responses
+- [x] Add unit tests for each provider adapter using mocked API responses
 - [ ] Token usage tracking across all three providers, not just Groq
 
 ---
@@ -206,6 +255,17 @@ Run it:
 ```bash
 python main.py
 ```
+Run tests:
+
+```bash
+pytest
+```
+
+Current status:
+
+```
+9 passed
+```
 
 You'll be prompted to choose a provider, then optionally set a custom system prompt. Commands available mid-conversation:
 
@@ -214,6 +274,12 @@ You'll be prompted to choose a provider, then optionally set a custom system pro
 | `/quit` | Exit the chatbot |
 | `/clear` | Reset conversation history (system prompt preserved) |
 | `/json` | Toggle structured JSON output mode |
+
+Dependencies are version-pinned to ensure reproducible environments across machines:
+
+```bash
+pip install -r requirements.txt
+```
 
 ---
 

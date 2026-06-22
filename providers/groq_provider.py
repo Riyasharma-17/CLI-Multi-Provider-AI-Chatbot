@@ -11,14 +11,30 @@ client = Groq(api_key=groq_api_key)
 
 def chat_with_groq(messages):
 
-    response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=messages
-    )
+    try:
 
-    bot_reply = response.choices[0].message.content #Extracts text from Groq's response object.
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=messages
+        )
 
-    input_tokens = response.usage.prompt_tokens
-    output_tokens = response.usage.completion_tokens
+        bot_reply = response.choices[0].message.content
+        input_tokens = response.usage.prompt_tokens
+        output_tokens = response.usage.completion_tokens
 
-    return bot_reply, input_tokens, output_tokens
+        return (
+            bot_reply,
+            input_tokens,
+            output_tokens
+        )
+
+    except Exception as e:
+
+        return (
+            f"Groq Error: {e}",
+            0,
+            0
+        )
+
+
+#Extracts text from Groq's response object.

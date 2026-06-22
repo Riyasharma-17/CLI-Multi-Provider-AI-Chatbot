@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from providers.gemini_provider import chat_with_gemini
+from providers.gemini_provider import chat_with_gemini 
 from providers.groq_provider import chat_with_groq
 from providers.openrouter_provider import chat_with_openrouter
 from utils.json_utils import display_response
