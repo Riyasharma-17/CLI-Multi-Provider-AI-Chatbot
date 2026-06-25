@@ -1,0 +1,12 @@
+Q: What is recursion?
+A: Recursion is a technique where a function calls itself to solve smaller versions of the same problem.
+
+---
+
+Q: What is a closure?
+A: A closure is a function that remembers variables from its enclosing scope even after the outer function has finished executing.
+
+---
+
+Q: What is polymorphism?
+A: Polymorphism allows different objects to respond to the same method in their own way.

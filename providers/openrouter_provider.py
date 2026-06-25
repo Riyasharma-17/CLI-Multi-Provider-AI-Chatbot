@@ -13,11 +13,12 @@ client = OpenAI(
 
 MODEL_NAME = "openrouter/free"
 
-def chat_with_openrouter(messages):
+def chat_with_openrouter(messages, temperature):
     try:
         response = client.chat.completions.create(
         model=MODEL_NAME,
-        messages=messages
+        messages=messages,
+        temperature=temperature
         )
 
         bot_reply = response.choices[0].message.content

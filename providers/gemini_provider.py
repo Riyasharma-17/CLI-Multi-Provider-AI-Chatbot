@@ -15,7 +15,7 @@ gemini_model = genai.GenerativeModel(
 )
 
 
-def chat_with_gemini(messages):
+def chat_with_gemini(messages, temperature):
 
     conversation = ""
 

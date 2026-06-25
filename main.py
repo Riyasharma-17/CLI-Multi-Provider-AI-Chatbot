@@ -6,7 +6,11 @@ from utils.json_utils import display_response
 from utils.system_utils import create_system_message
 from utils.command_utils import handle_command
 from utils.json_mode_utils import check_json_mode
-from utils.provider_utils import choose_provider
+from utils.provider_utils import (
+    choose_provider,
+    choose_temperature
+)
+from utils.few_shot_utils import load_examples
 
 load_dotenv(override=True)
 
@@ -14,7 +18,12 @@ system_message = create_system_message()
 
 messages = [system_message]
 
+few_shot_examples = load_examples()
+messages.extend(few_shot_examples)
+
 provider = choose_provider()
+temperature = choose_temperature()
+print("Temperature:", temperature)
 
 print("Using:", provider)
 
@@ -26,7 +35,8 @@ while True:
 
     should_quit, new_messages = handle_command(
         user_input,
-        system_message
+        system_message,
+        few_shot_examples
     )
 
     if should_quit:
@@ -68,17 +78,17 @@ while True:
 
     if provider == "groq":
         bot_reply, input_tokens, output_tokens = (
-            chat_with_groq(messages)
+            chat_with_groq(messages, temperature)
         )
 
     elif provider == "gemini":
         bot_reply, input_tokens, output_tokens = (
-            chat_with_gemini(messages)
+            chat_with_gemini(messages, temperature)
         )
 
     elif provider == "openrouter":
         bot_reply,input_tokens,output_tokens = (
-            chat_with_openrouter(messages)
+            chat_with_openrouter(messages, temperature)
         )
 
     display_response(bot_reply, json_mode)
