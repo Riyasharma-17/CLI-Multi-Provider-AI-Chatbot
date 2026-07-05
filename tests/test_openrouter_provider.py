@@ -23,7 +23,7 @@ def test_chat_with_openrouter_success():
     ):
 
         bot_reply, input_tokens, output_tokens = (
-            chat_with_openrouter([])
+            chat_with_openrouter([], 0.7)
         )
 
         assert bot_reply == "Hello from OpenRouter!"
@@ -39,7 +39,7 @@ def test_chat_with_openrouter_exception():
     ):
 
         bot_reply, input_tokens, output_tokens = (
-            chat_with_openrouter([])
+            chat_with_openrouter([], 0.7)
         )
 
         assert "OpenRouter Error" in bot_reply

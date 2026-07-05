@@ -23,8 +23,8 @@ def test_chat_with_groq_success():
     ):
 
         bot_reply, input_tokens, output_tokens = (
-            chat_with_groq([])
-        )
+    chat_with_groq([], 0.7)
+)
 
         assert bot_reply == "Hello!"
         assert input_tokens == 10
@@ -39,7 +39,7 @@ def test_chat_with_groq_exception():
     ):
 
         bot_reply, input_tokens, output_tokens = (
-            chat_with_groq([])
+            chat_with_groq([], 0.7)
         )
 
         assert "Groq Error" in bot_reply

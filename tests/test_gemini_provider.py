@@ -16,7 +16,7 @@ def test_chat_with_gemini_success():
     ):
 
         bot_reply, input_tokens, output_tokens = (
-            chat_with_gemini([])
+            chat_with_gemini([], 0.7)
         )
 
         assert bot_reply == "Hello from Gemini!"
@@ -32,7 +32,7 @@ def test_chat_with_gemini_exception():
     ):
 
         bot_reply, input_tokens, output_tokens = (
-            chat_with_gemini([])
+            chat_with_gemini([], 0.7)
         )
 
         assert "Gemini Error" in bot_reply
