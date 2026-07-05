@@ -234,6 +234,12 @@ Terminal demo showing provider selection, system prompt customization, conversat
 
 ---
 
+![CLI QA Bot Backend Demo](cli_fastapi.gif)
+
+FastAPI backend demo showing Swagger UI, `POST /chat`, conversation memory, `GET /history`, `DELETE /history`, and automated REST API interaction.
+
+---
+
 ## What I Learned
 
 - Abstraction earns its cost only when you actually need it a third time — not the first, not the second
