@@ -81,3 +81,10 @@ def clear_history():
     return {
         "message": "History cleared successfully."
     }
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "providers": ["groq", "gemini", "openrouter"]
+    }
