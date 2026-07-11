@@ -36,6 +36,16 @@ def chat_with_groq(messages, temperature):
             0,
             0
         )
+    
+def chat_with_groq_stream(messages,temperature):
+    response = client.chat.completions.create(
+        model = "llama-3.1-8b-instant",
+        messages=messages,
+        temperature=temperature,
+        stream=True
+    )
+
+    return response
 
 
 #Extracts text from Groq's response object.
