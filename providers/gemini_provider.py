@@ -27,8 +27,11 @@ def chat_with_gemini(messages, temperature):
 
     try:
         response = gemini_model.generate_content(
-            conversation
-        )
+            conversation,
+            generation_config=genai.GenerationConfig(
+                temperature=temperature
+    )
+)
 
         bot_reply = response.text
 
