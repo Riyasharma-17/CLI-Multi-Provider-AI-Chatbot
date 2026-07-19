@@ -82,40 +82,47 @@ This project solves that by designing a common interface and writing a dedicated
 
 ```
 HTTP Request
-     │
-     ▼
-┌─────────────┐
-│   FastAPI   │  ← Pydantic validation, CORS, HTTPException handling
-└──────┬──────┘
+      │
+      ▼
+┌──────────────┐
+│   FastAPI    │
+│ Pydantic +   │
+│ CORS + Docs  │
+└──────┬───────┘
        │
        ▼
-┌──────────────────┐
-│  Same Provider   │  ← No rewrite — existing adapters reused directly
-│  Abstraction     │
-└──────┬───────────┘
+┌────────────────────┐
+│   /chat Endpoint   │
+└──────┬─────────────┘
        │
        ▼
-┌──────────────────┐
-│  In-memory State │  ← Conversation history persisted per session
-└──────┬───────────┘
+ Is stream=True ?
+      │
+ ┌────┴────┐
+ │         │
+ ▼         ▼
+Normal   Streaming
+Reply    Response
+ │         │
+ ▼         ▼
+ChatResponse   StreamingResponse
        │
        ▼
-┌──────────────────┐
-│  JSON Response   │
-└──────────────────┘
-```
-
-The CLI and API share the same provider layer. Nothing in `providers/` was modified for Phase 2.
-
+ Provider Layer
+       │
+       ▼
+Conversation Memory
 ---
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/chat` | Send a message, get a response from the selected LLM |
-| GET | `/history` | Retrieve the current conversation history |
-| DELETE | `/history` | Clear conversation history, preserve system prompt |
+| Method | Endpoint       | Description                                                                       |
+| ------ | -------------- | --------------------------------------------------------------------------------- |
+| POST   | `/chat`        | Send a message to the selected LLM. Supports both normal and streaming responses. |
+| GET    | `/history`     | Retrieve the current conversation history                                         |
+| DELETE | `/history`     | Clear conversation history while preserving the system prompt                     |
+| GET    | `/stream-demo` | Demo endpoint to understand FastAPI streaming                                     |
+
 
 Interactive documentation available at `http://127.0.0.1:8000/docs` via Swagger UI.
 
@@ -166,7 +173,7 @@ cli-multi-provider-chatbot/
 |---|---|---|
 | LLM Providers | Groq, Gemini, OpenRouter | Free tiers across three structurally different APIs |
 | Provider interface | Custom adapter pattern | No existing abstraction handled all three cleanly |
-| Backend | FastAPI | Automatic Swagger docs, Pydantic validation, async-ready |
+| Backend | FastAPI | REST API, Swagger UI, Pydantic validation, StreamingResponse support |
 | Request validation | Pydantic | Type-safe request/response models, automatic error responses |
 | Structured output | Prompt-engineered JSON + `json.loads()` | LLMs don't guarantee valid JSON — parsing must be defensive |
 | Testing | pytest + FastAPI TestClient + unittest.mock | Provider tests run without real API calls |
@@ -214,6 +221,10 @@ Groq accepts a `messages` list natively. Gemini does not — conversation histor
 **Refactor before adding a third provider.**
 By Day 5, `main.py` handled routing, provider logic, JSON parsing, and command handling in one file. Refactoring into `providers/` and `utils/` happened before adding OpenRouter. The cost of refactoring a clean codebase is always lower than the cost of extending a messy one.
 
+Single endpoint for normal and streaming responses
+
+Instead of creating separate /chat and /chat-stream endpoints, the API uses a single /chat endpoint with a stream flag. This keeps the API simple while supporting both traditional JSON responses and real-time streaming without breaking existing clients.
+
 ---
 
 ## Challenges
@@ -236,7 +247,7 @@ Terminal demo showing provider selection, system prompt customization, conversat
 
 ![CLI QA Bot Backend Demo](cli_fastapi.gif)
 
-FastAPI backend demo showing Swagger UI, `POST /chat`, conversation memory, `GET /history`, `DELETE /history`, and automated REST API interaction.
+FastAPI backend demo showing Swagger UI, normal chat responses, real-time streaming, conversation memory, GET /history, DELETE /history, and REST API interaction.
 
 ---
 
@@ -248,12 +259,19 @@ FastAPI backend demo showing Swagger UI, `POST /chat`, conversation memory, `GET
 - Refactor when a file becomes hard to *extend*, not when it becomes hard to read — those are different signals
 - Infrastructure failures and logic bugs produce identical symptoms from the outside — isolate the layer before debugging the code
 - The same business logic can power a CLI and a REST API if it was written without coupling to either
-
+- Learned how HTTP streaming differs from normal request-response APIs.
+- Built streaming responses using FastAPI's StreamingResponse.
+- Understood the difference between return and yield in Python.
+- Used async generators to stream AI responses without blocking the server.
+- Learned why streamed responses must be reconstructed before storing them in conversation history.
+- Implemented one endpoint supporting both normal and streaming modes while maintaining backward compatibility.
 ---
 
 ## Limitations
 
-- **No streaming** — responses return in full, not token-by-token
+-  Streaming currently implemented for the Groq provider only.
+- Swagger UI has limited support for displaying streamed responses in real time.
+- Conversation history is stored only in memory and resets when the server restarts.
 - **No persistent storage** — conversation history resets on restart
 - **No retry/backoff** — transient API failures require manual retry
 - **Fixed JSON schema** — structured output uses a fixed `topic`/`summary` shape
@@ -262,7 +280,7 @@ FastAPI backend demo showing Swagger UI, `POST /chat`, conversation memory, `GET
 
 ## Roadmap
 
-- [ ] Streaming responses via FastAPI `StreamingResponse`
+- [x] Streaming responses via FastAPI `StreamingResponse`
 - [ ] Persistent conversation history (SQLite or JSON on disk)
 - [ ] Retry logic with exponential backoff for transient failures
 - [ ] Configurable JSON schemas via request body

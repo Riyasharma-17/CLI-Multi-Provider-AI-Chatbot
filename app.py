@@ -1,8 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+import asyncio
 
-from providers.groq_provider import chat_with_groq
 from models.chat_models import ChatRequest, ChatResponse
+from langchain_service import get_ai_response
+
+from providers.groq_provider import chat_with_groq_stream
 
 
 messages = [
@@ -23,7 +27,7 @@ app.add_middleware(
 )
 
 
-@app.post("/chat", response_model=ChatResponse)
+@app.post("/chat")
 def chat(request: ChatRequest):
 
     messages.append(
@@ -33,13 +37,48 @@ def chat(request: ChatRequest):
         }
     )
 
-    try:
-        bot_reply, input_tokens, output_tokens = chat_with_groq(
+    # Streaming (still uses old provider)
+    if request.stream:
+
+        stream = chat_with_groq_stream(
             messages,
             request.temperature
         )
 
-    except Exception as e:
+        async def generate():
+
+            full_reply = ""
+
+            for chunk in stream:
+
+                token = chunk.choices[0].delta.content
+
+                if token:
+                    full_reply += token
+                    yield token
+
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": full_reply
+                }
+            )
+
+        return StreamingResponse(
+            generate(),
+            media_type="text/plain"
+        )
+
+    # Normal response (LangChain)
+    try:
+
+        reply = get_ai_response(
+            question=request.message,
+            provider=request.provider
+        )
+
+    except Exception:
+
         raise HTTPException(
             status_code=500,
             detail="Unable to contact AI provider. Please try again later."
@@ -48,15 +87,15 @@ def chat(request: ChatRequest):
     messages.append(
         {
             "role": "assistant",
-            "content": bot_reply
+            "content": reply
         }
     )
 
     return ChatResponse(
-        reply=bot_reply,
-        provider="groq",
-        input_tokens=input_tokens,
-        output_tokens=output_tokens
+        reply=reply,
+        provider=request.provider,
+        input_tokens=0,
+        output_tokens=0
     )
 
 
@@ -82,9 +121,23 @@ def clear_history():
         "message": "History cleared successfully."
     }
 
-@app.get("/health")
-def health():
-    return {
-        "status": "ok",
-        "providers": ["groq", "gemini", "openrouter"]
-    }
+
+@app.get("/stream-demo")
+async def stream_demo():
+
+    async def generate():
+
+        yield "Hello "
+
+        await asyncio.sleep(1)
+
+        yield "from "
+
+        await asyncio.sleep(1)
+
+        yield "FastAPI!"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/plain"
+    )
