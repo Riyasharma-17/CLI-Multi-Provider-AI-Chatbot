@@ -1,5 +1,12 @@
 # CLI Multi-Provider AI Chatbot
 
+A chatbot that talks to three different AI providers (Groq, Gemini, OpenRouter) through one 
+unified interface — built first as a CLI tool, then exposed as a REST API, then wrapped 
+with LangChain to compare hand-rolled vs framework abstractions.
+
+Built to understand how LLM apps actually work under the hood, not just call an API and ship it.
+> Started as a 100-line CLI. Grew into a deployed, tested, multi-provider REST API.
+
 [![Python](https://img.shields.io/badge/Python-3.11-blue)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-REST%20API-green)](https://fastapi.tiangolo.com)
 [![Docker](https://img.shields.io/badge/Docker-Containerized-blue)](https://docker.com)
@@ -33,6 +40,14 @@ Each phase built on the previous one without rewriting what already worked.
 curl -X POST https://cli-multi-provider-ai-chatbot.onrender.com/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "What is RAG?", "provider": "groq"}'
+```
+**Sample response:**
+```json
+{
+  "provider": "groq",
+  "response": "RAG (Retrieval-Augmented Generation) is a technique where relevant documents are retrieved from a knowledge base and passed as context to an LLM before generating an answer — improving accuracy without retraining the model.",
+  "tokens_used": 142
+}
 ```
 
 Or open the [Swagger UI](https://cli-multi-provider-ai-chatbot.onrender.com/docs) — no setup needed.
