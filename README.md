@@ -14,8 +14,6 @@ Built to understand how LLM apps actually work under the hood, not just call an 
 [![Tests](https://img.shields.io/badge/Tests-10%20passed-brightgreen)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow)]()
 
-> Multi-provider AI chatbot — CLI → FastAPI → Deployed. Groq, Gemini, and OpenRouter behind one interface. Built without frameworks first, then with LangChain to understand the difference.
-
 **[Live API](https://cli-multi-provider-ai-chatbot.onrender.com) · [Swagger Docs](https://cli-multi-provider-ai-chatbot.onrender.com/docs)**
 
 ---
