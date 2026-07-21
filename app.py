@@ -26,6 +26,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def home():
+    return {
+        "message": "CLI Multi Provider AI Chatbot API",
+        "docs": "/docs"
+    }
 
 @app.post("/chat")
 def chat(request: ChatRequest):
