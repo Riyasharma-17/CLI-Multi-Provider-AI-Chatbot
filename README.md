@@ -1,296 +1,176 @@
-# CLI Multi-Provider AI Chatbot + FastAPI Backend
+# CLI Multi-Provider AI Chatbot
 
-> A multi-provider AI chatbot built in two phases — first as a CLI application, then evolved into a REST API backend. Supports Groq, Gemini, and OpenRouter through one unified interface, with conversation memory, structured JSON output, pytest-based test coverage, and Swagger UI documentation.
+[![Python](https://img.shields.io/badge/Python-3.11-blue)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-REST%20API-green)](https://fastapi.tiangolo.com)
+[![Docker](https://img.shields.io/badge/Docker-Containerized-blue)](https://docker.com)
+[![Render](https://img.shields.io/badge/Render-Live-purple)](https://cli-multi-provider-ai-chatbot.onrender.com/docs)
+[![Tests](https://img.shields.io/badge/Tests-10%20passed-brightgreen)]()
+[![License](https://img.shields.io/badge/License-MIT-yellow)]()
 
----
+> Multi-provider AI chatbot — CLI → FastAPI → Deployed. Groq, Gemini, and OpenRouter behind one interface. Built without frameworks first, then with LangChain to understand the difference.
 
-## What This Is
-
-Most beginner chatbot projects hardcode a single API call and stop there. This one is built around a harder, more useful question: what happens when you need to support more than one LLM provider, and they don't agree on how to do anything?
-
-Groq follows the OpenAI-compatible message format. Gemini doesn't. Each has different SDKs, different ways of handling conversation history, different error behavior, and different quota systems. This project builds a common interface across all three — so the application layer never needs to know which provider is actually answering.
-
-The project grew in two phases:
-
-- **Phase 1 — CLI:** Interactive terminal chatbot with memory, system prompts, JSON mode, and provider switching
-- **Phase 2 — FastAPI:** The same business logic wrapped in a REST API, without rewriting the provider layer
+**[Live API](https://cli-multi-provider-ai-chatbot.onrender.com) · [Swagger Docs](https://cli-multi-provider-ai-chatbot.onrender.com/docs)**
 
 ---
 
-## The Problem
+## What Was Built
 
-If you build a chatbot around one provider's SDK, you've built a chatbot that breaks the moment that provider hits a rate limit, deprecates a model, or goes down.
+| Phase | What | Stack |
+|---|---|---|
+| 1 | CLI chatbot — memory, system prompts, JSON mode | Python, Groq, Gemini, OpenRouter |
+| 2 | REST API — same logic, HTTP interface | FastAPI, Pydantic, Streaming |
+| 3 | LangChain integration — chains, memory, output parsers | LangChain, LCEL |
+| 4 | Containerized + deployed | Docker, Render |
 
-The harder problem: providers don't share a common API shape.
+Each phase built on the previous one without rewriting what already worked.
 
-- Groq exposes an OpenAI-compatible `messages` list (`system` / `user` / `assistant` roles)
-- Gemini does not — conversation history has to be serialized differently
-- Each SDK has its own client setup, error types, and response structure
+---
 
-This project solves that by designing a common interface and writing a dedicated adapter per provider behind it. Adding a third provider (OpenRouter) took a fraction of the effort the second one did — which is the point.
+## Live Demo
+
+```bash
+# Try it now
+curl -X POST https://cli-multi-provider-ai-chatbot.onrender.com/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What is RAG?", "provider": "groq"}'
+```
+
+Or open the [Swagger UI](https://cli-multi-provider-ai-chatbot.onrender.com/docs) — no setup needed.
 
 ---
 
 ## Architecture
 
-### Phase 1 — CLI
-
 ```
-                    ┌─────────────────┐
-                    │   CLI Input     │
-                    └────────┬────────┘
-                             │
-                             ▼
-                  ┌─────────────────────┐
-                  │   Command Router     │  ← /quit, /clear, /json
-                  └──────────┬───────────┘
-                             │
-                             ▼
-                  ┌─────────────────────┐
-                  │  Conversation State  │  ← messages list (system/user/assistant)
-                  └──────────┬───────────┘
-                             │
-                             ▼
-                  ┌─────────────────────┐
-                  │  Provider Selector   │  ← chosen at startup
-                  └──────────┬───────────┘
-                             │
-              ┌──────────────┼──────────────┐
-              ▼              ▼              ▼
-       ┌───────────┐  ┌───────────┐  ┌──────────────┐
-       │   Groq    │  │  Gemini   │  │  OpenRouter   │
-       │ Adapter   │  │ Adapter   │  │   Adapter     │
-       └─────┬─────┘  └─────┬─────┘  └──────┬────────┘
-             └──────────────┼───────────────┘
-                             ▼
-                  ┌─────────────────────┐
-                  │   Normalized Output  │
-                  └──────────┬───────────┘
-                             │
-                             ▼
-                  ┌─────────────────────┐
-                  │  JSON Mode Handler   │  ← optional structured parsing
-                  └──────────┬───────────┘
-                             │
-                             ▼
-                    ┌──────────────┐
-                    │  CLI Output  │
-                    └──────────────┘
+CLI Input / HTTP Request
+         │
+         ▼
+  ┌─────────────┐
+  │   Router    │  /chat · /history · /stream-demo
+  └──────┬──────┘
+         │
+         ▼
+  ┌─────────────┐
+  │  LangChain  │  ChatPromptTemplate → LLM → StrOutputParser
+  │    Chain    │  ConversationBufferMemory
+  └──────┬──────┘
+         │
+         ▼
+  ┌─────────────────────────────┐
+  │      Provider Adapter       │  common interface — swap without touching app logic
+  ├──────────┬──────────┬───────┤
+  │   Groq   │  Gemini  │  OR   │  OpenRouter
+  └──────────┴──────────┴───────┘
+         │
+         ▼
+  Normal Response / StreamingResponse
 ```
 
-### Phase 2 — FastAPI Backend
+The provider layer predates LangChain in this project — it was written from scratch first, which is why the LangChain integration sits *above* it rather than replacing it.
 
-```
-HTTP Request
-      │
-      ▼
-┌──────────────┐
-│   FastAPI    │
-│ Pydantic +   │
-│ CORS + Docs  │
-└──────┬───────┘
-       │
-       ▼
-┌────────────────────┐
-│   /chat Endpoint   │
-└──────┬─────────────┘
-       │
-       ▼
- Is stream=True ?
-      │
- ┌────┴────┐
- │         │
- ▼         ▼
-Normal   Streaming
-Reply    Response
- │         │
- ▼         ▼
-ChatResponse   StreamingResponse
-       │
-       ▼
- Provider Layer
-       │
-       ▼
-Conversation Memory
 ---
 
 ## API Endpoints
 
-| Method | Endpoint       | Description                                                                       |
-| ------ | -------------- | --------------------------------------------------------------------------------- |
-| POST   | `/chat`        | Send a message to the selected LLM. Supports both normal and streaming responses. |
-| GET    | `/history`     | Retrieve the current conversation history                                         |
-| DELETE | `/history`     | Clear conversation history while preserving the system prompt                     |
-| GET    | `/stream-demo` | Demo endpoint to understand FastAPI streaming                                     |
-
-
-Interactive documentation available at `http://127.0.0.1:8000/docs` via Swagger UI.
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/chat` | Chat — normal or streaming (`stream: true`) |
+| `GET` | `/history` | Current conversation history |
+| `DELETE` | `/history` | Clear history, preserve system prompt |
+| `GET` | `/stream-demo` | Streaming response demo |
 
 ---
 
 ## Project Structure
 
 ```
-cli-multi-provider-chatbot/
-│
-├── app.py                         # FastAPI backend
-├── main.py                        # CLI application controller
+├── app.py                    # FastAPI — routes, streaming, CORS
+├── main.py                   # CLI entry point
 │
 ├── providers/
-│   ├── groq_provider.py           # Groq adapter (OpenAI-compatible)
-│   ├── gemini_provider.py         # Gemini adapter (transcript-based memory)
-│   └── openrouter_provider.py     # OpenRouter adapter
+│   ├── groq_provider.py      # OpenAI-compatible adapter
+│   ├── gemini_provider.py    # Transcript-based memory adapter
+│   └── openrouter_provider.py
 │
 ├── models/
-│   └── chat_models.py             # Pydantic request/response models
+│   └── chat_models.py        # Pydantic request/response models
 │
 ├── utils/
-│   ├── json_utils.py              # JSON parsing, validation, formatting
-│   ├── system_utils.py            # System prompt construction
-│   ├── command_utils.py           # /quit, /clear handling
-│   ├── json_mode_utils.py         # JSON mode detection
-│   └── provider_utils.py          # Provider selection
+│   ├── json_utils.py         # Defensive JSON parsing
+│   ├── system_utils.py       # System prompt construction
+│   ├── command_utils.py      # /quit /clear
+│   ├── json_mode_utils.py
+│   └── provider_utils.py
 │
-├── tests/
-│   ├── test_api.py                # FastAPI endpoint tests
+├── tests/                    # pytest — 10 passing
+│   ├── test_api.py
 │   ├── test_json_utils.py
 │   ├── test_groq_provider.py
 │   ├── test_gemini_provider.py
 │   └── test_openrouter_provider.py
 │
-├── .env
+├── Dockerfile
 ├── requirements.txt
-└── README.md
+└── .env
 ```
-
-`app.py` does not know how Gemini formats a prompt. `groq_provider.py` does not know what a REST endpoint is. Each module owns exactly one responsibility.
 
 ---
 
 ## Tech Stack
 
-| Component | Choice | Why |
+| | Tool | Why |
 |---|---|---|
-| LLM Providers | Groq, Gemini, OpenRouter | Free tiers across three structurally different APIs |
-| Provider interface | Custom adapter pattern | No existing abstraction handled all three cleanly |
-| Backend | FastAPI | REST API, Swagger UI, Pydantic validation, StreamingResponse support |
-| Request validation | Pydantic | Type-safe request/response models, automatic error responses |
-| Structured output | Prompt-engineered JSON + `json.loads()` | LLMs don't guarantee valid JSON — parsing must be defensive |
-| Testing | pytest + FastAPI TestClient + unittest.mock | Provider tests run without real API calls |
-| Env management | `python-dotenv` | Standard API key security |
+| **LLMs** | Groq · Gemini · OpenRouter | Three structurally different APIs — free tier |
+| **Orchestration** | LangChain + LCEL | Chains, memory, output parsers — learned by building without it first |
+| **Backend** | FastAPI | Async, Pydantic validation, streaming, auto docs |
+| **Testing** | pytest + unittest.mock | Provider tests run without real API calls |
+| **Deploy** | Docker + Render | Containerized, auto-deploys on push |
 
-LangChain was deliberately excluded. The goal was to understand what a provider abstraction layer actually has to handle before relying on a framework to hide it.
+---
+
+## Key Decisions
+
+**Built the adapter pattern before adding LangChain.**
+Understanding what LangChain abstracts required building it manually first — message formatting, memory serialization, provider normalization. LangChain now sits above the provider layer, not instead of it.
+
+**One `/chat` endpoint for normal and streaming.**
+Single endpoint with a `stream` flag instead of two separate routes. Simpler API surface, backward compatible.
+
+**Refactored before adding the third provider.**
+`main.py` was doing everything by Day 5. Splitting into `providers/` and `utils/` before adding OpenRouter meant the third provider took an hour. Abstraction pays on the third use, not the second.
+
+**Defensive JSON parsing everywhere.**
+Prompting for JSON doesn't guarantee JSON. Every parse is wrapped in `try/except`, every key access uses `.get()`. Tests verify the failure paths, not just the happy path.
 
 ---
 
 ## Testing
 
-Defensive code is only useful if it is verified. Provider adapters and JSON parsing are wrapped in exception handling — pytest tests confirm both the success and failure paths actually behave as expected.
-
-**What is tested:**
-
-| Area | Scenarios Covered |
-|---|---|
-| JSON utils | Valid JSON, malformed JSON, plain text mode |
-| Groq provider | Successful response, API failure |
-| Gemini provider | Successful response, quota/API failure |
-| OpenRouter provider | Successful response, failure |
-| FastAPI endpoints | POST `/chat`, GET `/history`, DELETE `/history` |
-
-Provider tests use `unittest.mock` — no real API calls, no network dependency, reproducible in any environment.
-
 ```
 10 passed
 ```
 
-This makes the exception handling verifiable, not just claimed.
+| What | Coverage |
+|---|---|
+| JSON utils | Valid, malformed, plain text |
+| Groq / Gemini / OpenRouter | Success + failure paths |
+| FastAPI endpoints | POST · GET · DELETE |
+
+All provider tests use `unittest.mock` — no network, no API keys, runs anywhere.
 
 ---
 
-## Key Engineering Decisions
+## Demos
 
-**Provider abstraction before adding a third provider.**
-The first version hardcoded Groq directly into the main loop. Adding Gemini meant duplicating the loop with provider-specific branches. Defining a common interface (`chat_with_provider(messages) → response`) before adding OpenRouter meant the third provider took an hour instead of a day. Abstraction earned its cost on the third provider, not the second.
+![CLI Demo](clibot.gif)
+*Provider selection · system prompts · memory · JSON mode*
 
-**CLI to REST API without rewriting business logic.**
-The FastAPI backend reuses the same provider adapters and conversation logic from the CLI — terminal input/output was simply replaced with HTTP requests and JSON responses. No duplication, no rewrite. This is what separation of concerns looks like in practice.
-
-**Memory simulation for non-compatible APIs.**
-Groq accepts a `messages` list natively. Gemini does not — conversation history had to be serialized into a transcript string per call. The application maintains an internal message format and each adapter translates it independently.
-
-**Refactor before adding a third provider.**
-By Day 5, `main.py` handled routing, provider logic, JSON parsing, and command handling in one file. Refactoring into `providers/` and `utils/` happened before adding OpenRouter. The cost of refactoring a clean codebase is always lower than the cost of extending a messy one.
-
-Single endpoint for normal and streaming responses
-
-Instead of creating separate /chat and /chat-stream endpoints, the API uses a single /chat endpoint with a stream flag. This keeps the API simple while supporting both traditional JSON responses and real-time streaming without breaking existing clients.
+![FastAPI Demo](cli_fastapi.gif)
+*Swagger UI · streaming · history endpoints*
 
 ---
 
-## Challenges
-
-**Providers fail differently, and the application has to survive all of them.**
-Gemini's free tier hit quota limits during development. It looked like a code bug. It wasn't. Distinguishing an infrastructure failure from a logic error required reading error messages carefully and testing providers in isolation. This shaped the exception handling strategy: provider failures are caught and reported, not allowed to crash the application.
-
-**"Return JSON" is not a contract.**
-Prompting a model for JSON output does not guarantee valid JSON. Malformed responses, missing fields, and inconsistent formatting all occurred during testing. Wrapping `json.loads()` in `try/except`, using `.get()` instead of direct key access, and never letting a bad response crash the loop were all necessary — and later verified with tests.
-
----
-
-## Demo
-
-![CLI QA Bot Demo](clibot.gif)
-
-Terminal demo showing provider selection, system prompt customization, conversation memory, JSON mode, and graceful exit.
-
----
-
-![CLI QA Bot Backend Demo](cli_fastapi.gif)
-
-FastAPI backend demo showing Swagger UI, normal chat responses, real-time streaming, conversation memory, GET /history, DELETE /history, and REST API interaction.
-
----
-
-## What I Learned
-
-- Abstraction earns its cost only when you actually need it a third time — not the first, not the second
-- LLM APIs are not interchangeable even when they solve the same problem — message formats, memory handling, and error types all differ
-- Defensive programming with LLM output is not optional — a REST API has a schema, an LLM making a "best effort" at JSON does not
-- Refactor when a file becomes hard to *extend*, not when it becomes hard to read — those are different signals
-- Infrastructure failures and logic bugs produce identical symptoms from the outside — isolate the layer before debugging the code
-- The same business logic can power a CLI and a REST API if it was written without coupling to either
-- Learned how HTTP streaming differs from normal request-response APIs.
-- Built streaming responses using FastAPI's StreamingResponse.
-- Understood the difference between return and yield in Python.
-- Used async generators to stream AI responses without blocking the server.
-- Learned why streamed responses must be reconstructed before storing them in conversation history.
-- Implemented one endpoint supporting both normal and streaming modes while maintaining backward compatibility.
----
-
-## Limitations
-
--  Streaming currently implemented for the Groq provider only.
-- Swagger UI has limited support for displaying streamed responses in real time.
-- Conversation history is stored only in memory and resets when the server restarts.
-- **No persistent storage** — conversation history resets on restart
-- **No retry/backoff** — transient API failures require manual retry
-- **Fixed JSON schema** — structured output uses a fixed `topic`/`summary` shape
-
----
-
-## Roadmap
-
-- [x] Streaming responses via FastAPI `StreamingResponse`
-- [ ] Persistent conversation history (SQLite or JSON on disk)
-- [ ] Retry logic with exponential backoff for transient failures
-- [ ] Configurable JSON schemas via request body
-- [ ] Token usage tracking across all three providers
-- [x] FastAPI backend with REST endpoints
-- [x] Automated tests with mocked providers
-
----
-
-## Running Locally
+## Run Locally
 
 ```bash
 git clone https://github.com/Riyasharma-17/CLI-Multi-Provider-AI-Chatbot
@@ -298,38 +178,50 @@ cd CLI-Multi-Provider-AI-Chatbot
 pip install -r requirements.txt
 ```
 
-Create a `.env` file:
-```
-GROQ_API_KEY=your_key_here
-GEMINI_API_KEY=your_key_here
-OPENROUTER_API_KEY=your_key_here
+```env
+# .env
+GROQ_API_KEY=your_key
+GEMINI_API_KEY=your_key
+OPENROUTER_API_KEY=your_key
 ```
 
-**Run the CLI:**
 ```bash
-python main.py
+python main.py          # CLI
+uvicorn app:app --reload  # API → localhost:8000/docs
+pytest                  # Tests
 ```
 
-**Run the FastAPI backend:**
+**Docker:**
 ```bash
-uvicorn app:app --reload
+docker build -t cli-chatbot .
+docker run -p 8000:8000 -e GROQ_API_KEY=your_key cli-chatbot
 ```
-
-API docs: `http://127.0.0.1:8000/docs`
-
-**Run tests:**
-```bash
-pytest
-```
-
-**CLI commands:**
-
-| Command | Effect |
-|---|---|
-| `/quit` | Exit |
-| `/clear` | Reset history, preserve system prompt |
-| `/json` | Toggle structured JSON output mode |
 
 ---
 
-*Built to understand what a real provider-agnostic AI integration requires — message formatting, memory handling, failure isolation, and API design — before relying on a framework to abstract it away.*
+## What I Learned
+
+- LangChain's value is obvious only after building what it replaces
+- Provider APIs are not interchangeable — memory, message format, and errors all differ per SDK
+- `return` vs `yield` in Python determines whether a response streams or blocks
+- Infrastructure failures and code bugs look identical until you isolate the layer
+- Separation of concerns is what allowed the same provider code to power a CLI, a REST API, and a LangChain chain without modification
+
+---
+
+## Roadmap
+
+- [x] Multi-provider CLI
+- [x] FastAPI backend
+- [x] LangChain integration
+- [x] Streaming responses
+- [x] Docker + Render deployment
+- [x] 10 passing tests
+- [ ] Persistent history (SQLite)
+- [ ] Retry + exponential backoff
+- [ ] Streaming for Gemini + OpenRouter
+- [ ] Configurable JSON schemas
+
+---
+
+*Started as a CLI. Became an API. Deployed to production. Built to understand the full stack of an LLM application — not just the model call.*
