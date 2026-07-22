@@ -1,20 +1,18 @@
 # CLI Multi-Provider AI Chatbot
 
-A chatbot that talks to three different AI providers (Groq, Gemini, OpenRouter) through one 
-unified interface — built first as a CLI tool, then exposed as a REST API, then wrapped 
-with LangChain to compare hand-rolled vs framework abstractions.
+A chatbot that talks to Groq, Gemini, and OpenRouter through one unified interface — built as a CLI first, then a REST API, then wrapped with LangChain, then given a Gradio UI. Each phase added without rewriting what came before.
 
-Built to understand how LLM apps actually work under the hood, not just call an API and ship it.
-> Started as a 100-line CLI. Grew into a deployed, tested, multi-provider REST API.
+>A production-style multi-provider AI chatbot supporting Groq, Gemini, and OpenRouter through a unified FastAPI backend with LangChain orchestration and a Gradio frontend.
 
 [![Python](https://img.shields.io/badge/Python-3.11-blue)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-REST%20API-green)](https://fastapi.tiangolo.com)
+[![Gradio](https://img.shields.io/badge/Gradio-UI-orange)](https://multi-provider-ai-chatbot-ui.onrender.com)
 [![Docker](https://img.shields.io/badge/Docker-Containerized-blue)](https://docker.com)
 [![Render](https://img.shields.io/badge/Render-Live-purple)](https://cli-multi-provider-ai-chatbot.onrender.com/docs)
 [![Tests](https://img.shields.io/badge/Tests-10%20passed-brightgreen)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow)]()
 
-**[Live API](https://cli-multi-provider-ai-chatbot.onrender.com) · [Swagger Docs](https://cli-multi-provider-ai-chatbot.onrender.com/docs)**
+**[Live UI](https://multi-provider-ai-chatbot-ui.onrender.com) · [Live API](https://cli-multi-provider-ai-chatbot.onrender.com) · [Swagger Docs](https://cli-multi-provider-ai-chatbot.onrender.com/docs)**
 
 ---
 
@@ -25,61 +23,83 @@ Built to understand how LLM apps actually work under the hood, not just call an 
 | 1 | CLI chatbot — memory, system prompts, JSON mode | Python, Groq, Gemini, OpenRouter |
 | 2 | REST API — same logic, HTTP interface | FastAPI, Pydantic, Streaming |
 | 3 | LangChain integration — chains, memory, output parsers | LangChain, LCEL |
-| 4 | Containerized + deployed | Docker, Render |
+| 4 | Gradio frontend — chat UI, provider selector, temperature | Gradio |
+| 5 | Containerized + deployed — two services, one repo | Docker, Render |
 
-Each phase built on the previous one without rewriting what already worked.
 
 ---
 
 ## Live Demo
 
+**Try the UI (no setup):**
+👉 [multi-provider-ai-chatbot-ui.onrender.com](https://multi-provider-ai-chatbot-ui.onrender.com)
+
+**Or hit the API directly:**
 ```bash
-# Try it now
 curl -X POST https://cli-multi-provider-ai-chatbot.onrender.com/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "What is RAG?", "provider": "groq"}'
 ```
+## Features
+
+- Multi-provider support (Groq, Gemini, OpenRouter)
+- Unified FastAPI API
+- LangChain integration
+- Adjustable temperature
+- Streaming responses
+- Conversation history
+- Dockerized deployment
+- Independent Gradio frontend
+
 **Sample response:**
 ```json
 {
   "provider": "groq",
-  "response": "RAG (Retrieval-Augmented Generation) is a technique where relevant documents are retrieved from a knowledge base and passed as context to an LLM before generating an answer — improving accuracy without retraining the model.",
+  "response": "RAG (Retrieval-Augmented Generation) retrieves relevant documents from a knowledge base and passes them as context to an LLM before generating an answer — improving accuracy without retraining the model.",
   "tokens_used": 142
 }
 ```
-
-Or open the [Swagger UI](https://cli-multi-provider-ai-chatbot.onrender.com/docs) — no setup needed.
 
 ---
 
 ## Architecture
 
 ```
-CLI Input / HTTP Request
-         │
-         ▼
-  ┌─────────────┐
-  │   Router    │  /chat · /history · /stream-demo
-  └──────┬──────┘
-         │
-         ▼
-  ┌─────────────┐
-  │  LangChain  │  ChatPromptTemplate → LLM → StrOutputParser
-  │    Chain    │  ConversationBufferMemory
-  └──────┬──────┘
-         │
-         ▼
-  ┌─────────────────────────────┐
-  │      Provider Adapter       │  common interface — swap without touching app logic
-  ├──────────┬──────────┬───────┤
-  │   Groq   │  Gemini  │  OR   │  OpenRouter
-  └──────────┴──────────┴───────┘
-         │
-         ▼
-  Normal Response / StreamingResponse
+                    ┌─────────────────────┐
+                    │     Gradio UI        │  provider selector · temperature · chat
+                    └──────────┬──────────┘
+                               │ HTTP
+                               ▼
+          ┌────────────────────────────────────┐
+          │           FastAPI Backend           │  /chat · /history · /stream-demo
+          │     Pydantic · CORS · Streaming     │
+          └──────────────┬─────────────────────┘
+                         │
+                         ▼
+          ┌──────────────────────────────────┐
+          │         LangChain Chain           │
+          │  Prompt → LLM → OutputParser      │
+          │  ConversationBufferMemory         │
+          └──────────────┬───────────────────┘
+                         │
+                         ▼
+          ┌──────────────────────────────────┐
+          │        Provider Adapter          │  common interface
+          ├───────────┬──────────┬───────────┤
+          │   Groq    │  Gemini  │ OpenRouter │
+          └───────────┴──────────┴───────────┘
+                         │
+                         ▼
+              Normal / StreamingResponse
 ```
 
-The provider layer predates LangChain in this project — it was written from scratch first, which is why the LangChain integration sits *above* it rather than replacing it.
+**Deployment: one repo, two Render services**
+
+```
+GitHub Repo
+    ├── / (root)          →  Render Service 1: FastAPI Backend
+    └── /gradio_ui        →  Render Service 2: Gradio Frontend
+```
 
 ---
 
@@ -90,32 +110,36 @@ The provider layer predates LangChain in this project — it was written from sc
 | `POST` | `/chat` | Chat — normal or streaming (`stream: true`) |
 | `GET` | `/history` | Current conversation history |
 | `DELETE` | `/history` | Clear history, preserve system prompt |
-| `GET` | `/stream-demo` | Streaming response demo |
+| `GET` | `/stream-demo` | Streaming demo |
 
 ---
 
 ## Project Structure
 
 ```
-├── app.py                    # FastAPI — routes, streaming, CORS
-├── main.py                   # CLI entry point
+├── app.py                      # FastAPI backend
+├── main.py                     # CLI entry point
 │
 ├── providers/
-│   ├── groq_provider.py      # OpenAI-compatible adapter
-│   ├── gemini_provider.py    # Transcript-based memory adapter
+│   ├── groq_provider.py        # OpenAI-compatible adapter
+│   ├── gemini_provider.py      # Transcript-based memory adapter
 │   └── openrouter_provider.py
 │
 ├── models/
-│   └── chat_models.py        # Pydantic request/response models
+│   └── chat_models.py          # Pydantic models
 │
 ├── utils/
-│   ├── json_utils.py         # Defensive JSON parsing
-│   ├── system_utils.py       # System prompt construction
-│   ├── command_utils.py      # /quit /clear
+│   ├── json_utils.py           # Defensive JSON parsing
+│   ├── system_utils.py
+│   ├── command_utils.py
 │   ├── json_mode_utils.py
 │   └── provider_utils.py
 │
-├── tests/                    # pytest — 10 passing
+├── gradio_ui/
+│   ├── app.py                  # Gradio frontend — calls FastAPI via HTTP
+│   └── requirements.txt
+│
+├── tests/
 │   ├── test_api.py
 │   ├── test_json_utils.py
 │   ├── test_groq_provider.py
@@ -133,27 +157,31 @@ The provider layer predates LangChain in this project — it was written from sc
 
 | | Tool | Why |
 |---|---|---|
-| **LLMs** | Groq · Gemini · OpenRouter | Three structurally different APIs — free tier |
-| **Orchestration** | LangChain + LCEL | Chains, memory, output parsers — learned by building without it first |
-| **Backend** | FastAPI | Async, Pydantic validation, streaming, auto docs |
-| **Testing** | pytest + unittest.mock | Provider tests run without real API calls |
-| **Deploy** | Docker + Render | Containerized, auto-deploys on push |
+| **LLMs** | Groq · Gemini · OpenRouter | Three structurally different APIs on free tier |
+| **Orchestration** | LangChain + LCEL | Built without it first — added after understanding what it replaces |
+| **Backend** | FastAPI | Async, Pydantic, streaming, Swagger UI |
+| **Frontend** | Gradio | Lightweight chat UI — deployed independently from backend |
+| **Testing** | pytest + unittest.mock | Runs without real API calls or network |
+| **Deploy** | Docker + Render | One repo, two services, auto-deploy on push |
 
 ---
 
 ## Key Decisions
 
 **Built the adapter pattern before adding LangChain.**
-Understanding what LangChain abstracts required building it manually first — message formatting, memory serialization, provider normalization. LangChain now sits above the provider layer, not instead of it.
+Wrote message formatting, memory serialization, and provider normalization from scratch first. LangChain was added after — so its abstractions are understood, not just used.
+
+**Gradio calls FastAPI over HTTP, not as an import.**
+The frontend and backend are decoupled — Gradio is a separate Render service that makes HTTP requests to the API. Swapping the frontend for React or any other UI requires zero backend changes.
 
 **One `/chat` endpoint for normal and streaming.**
-Single endpoint with a `stream` flag instead of two separate routes. Simpler API surface, backward compatible.
+Single endpoint with a `stream` flag. Simpler surface, backward compatible.
 
-**Refactored before adding the third provider.**
-`main.py` was doing everything by Day 5. Splitting into `providers/` and `utils/` before adding OpenRouter meant the third provider took an hour. Abstraction pays on the third use, not the second.
+**Refactored before extending.**
+`main.py` was doing everything by Day 5. Split into `providers/` and `utils/` before adding the third provider. The third provider took an hour because of it.
 
 **Defensive JSON parsing everywhere.**
-Prompting for JSON doesn't guarantee JSON. Every parse is wrapped in `try/except`, every key access uses `.get()`. Tests verify the failure paths, not just the happy path.
+LLMs don't guarantee valid JSON when you ask for it. Every parse is `try/except`, every key access is `.get()`. Tests cover the failure paths.
 
 ---
 
@@ -192,16 +220,27 @@ pip install -r requirements.txt
 ```
 
 ```env
-# .env
 GROQ_API_KEY=your_key
 GEMINI_API_KEY=your_key
 OPENROUTER_API_KEY=your_key
 ```
 
 ```bash
-python main.py          # CLI
-uvicorn app:app --reload  # API → localhost:8000/docs
-pytest                  # Tests
+# CLI
+python main.py
+
+# FastAPI backend
+uvicorn app:app --reload
+# → http://localhost:8000/docs
+
+# Gradio frontend (separate terminal)
+cd gradio_ui
+pip install -r requirements.txt
+python app.py
+# → http://localhost:7860
+
+# Tests
+pytest
 ```
 
 **Docker:**
@@ -215,10 +254,10 @@ docker run -p 8000:8000 -e GROQ_API_KEY=your_key cli-chatbot
 ## What I Learned
 
 - LangChain's value is obvious only after building what it replaces
-- Provider APIs are not interchangeable — memory, message format, and errors all differ per SDK
-- `return` vs `yield` in Python determines whether a response streams or blocks
-- Infrastructure failures and code bugs look identical until you isolate the layer
-- Separation of concerns is what allowed the same provider code to power a CLI, a REST API, and a LangChain chain without modification
+- Decoupling frontend and backend means each can be deployed, scaled, and replaced independently
+- `return` vs `yield` in Python is the difference between blocking and streaming responses
+- Infrastructure failures and code bugs look identical — isolate the layer before debugging
+- The same provider code powered a CLI, a REST API, a LangChain chain, and a Gradio UI without modification — that's what separation of concerns actually looks like
 
 ---
 
@@ -228,7 +267,8 @@ docker run -p 8000:8000 -e GROQ_API_KEY=your_key cli-chatbot
 - [x] FastAPI backend
 - [x] LangChain integration
 - [x] Streaming responses
-- [x] Docker + Render deployment
+- [x] Gradio frontend
+- [x] Docker + Render deployment (two services)
 - [x] 10 passing tests
 - [ ] Persistent history (SQLite)
 - [ ] Retry + exponential backoff
@@ -237,4 +277,4 @@ docker run -p 8000:8000 -e GROQ_API_KEY=your_key cli-chatbot
 
 ---
 
-*Started as a CLI. Became an API. Deployed to production. Built to understand the full stack of an LLM application — not just the model call.*
+*Started as a CLI. Became an API. Got a UI. Deployed to production. Built to understand the full stack of an LLM application — not just the model call.*
