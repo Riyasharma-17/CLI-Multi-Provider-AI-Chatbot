@@ -1,7 +1,6 @@
-import os
-import requests
 import gradio as gr
-
+import requests
+import os 
 API_URL = "https://cli-multi-provider-ai-chatbot.onrender.com/chat"
 
 
@@ -12,123 +11,83 @@ def chat(message, history, provider, temperature):
             json={
                 "message": message,
                 "provider": provider.lower(),
-                "temperature": temperature,
+                "temperature": temperature
             },
-            timeout=30,
+            timeout=30
         )
 
         response.raise_for_status()
-        return response.json()["reply"]
+
+        data = response.json()
+
+        return data["reply"]
 
     except requests.exceptions.Timeout:
-        return "Request timed out. Please try again."
+        return "⏳ Request timed out. The server is taking too long to respond."
 
     except requests.exceptions.ConnectionError:
-        return "Unable to connect to the backend server."
+        return "❌ Unable to connect to the backend server."
 
     except requests.exceptions.HTTPError as e:
-        return f"Server Error ({response.status_code}): {e}"
+        return f"⚠️ Server Error ({response.status_code}): {e}"
 
     except Exception as e:
-        return f"Unexpected Error: {str(e)}"
+        return f"❌ Unexpected Error: {str(e)}"
 
 
-custom_css = """
-footer {
-    display: none;
-}
-
-.gradio-container {
-    max-width: 980px !important;
-    margin: auto;
-}
-
-h1 {
-    font-weight: 700 !important;
-}
-
-.block {
-    border-radius: 12px !important;
-}
-"""
-
-with gr.Blocks(
-    title="Multi-Provider AI Chatbot",
-    theme=gr.themes.Default(
-        primary_hue="gray",
-        neutral_hue="slate",
-    ),
-    css=custom_css,
-    fill_width=False,
-) as demo:
+with gr.Blocks(title="Multi-Provider AI Chatbot") as demo:
 
     gr.Markdown(
         """
-# Multi-Provider AI Chatbot
+# 🤖 Multi-Provider AI Chatbot
 
-Unified interface for interacting with Groq, Gemini, and OpenRouter through a FastAPI backend.
+Interact with **Groq**, **Gemini**, or **OpenRouter** through a unified **FastAPI + LangChain** backend.
+
+Select a provider, adjust the temperature, and start chatting.
 """
     )
 
-    with gr.Row():
+    provider = gr.Dropdown(
+        choices=["Groq", "Gemini", "OpenRouter"],
+        value="Groq",
+        label="LLM Provider"
+    )
 
-        provider = gr.Dropdown(
-            choices=["Groq", "Gemini", "OpenRouter"],
-            value="Groq",
-            label="Provider",
-        )
-
-        temperature = gr.Slider(
-            minimum=0,
-            maximum=2,
-            value=0.7,
-            step=0.1,
-            label="Temperature",
-        )
+    temperature = gr.Slider(
+        minimum=0,
+        maximum=2,
+        value=0.7,
+        step=0.1,
+        label="Temperature"
+    )
 
     gr.ChatInterface(
         fn=chat,
-
         additional_inputs=[
             provider,
-            temperature,
-        ],
-
-        chatbot=gr.Chatbot(
-            label="Conversation",
-            height=520,
-        ),
-
-        textbox=gr.Textbox(
-            placeholder="Ask a question...",
-            lines=2,
-        ),
-
-        examples=[
-            ["Explain Docker in one sentence"],
-            ["What is LangChain?"],
-            ["Write a binary search in Python"],
-        ],
+            temperature
+        ]
     )
 
     gr.Markdown(
         """
 ---
+### 🛠 Built With
 
-Built with FastAPI, LangChain, Gradio, Docker and Render.
-
-Created by **Riya Sharma**
+- ⚡ FastAPI
+- 🦜 LangChain
+- 🤖 Gradio
+- 🐳 Docker
+- ☁️ Render
 """
     )
 
-
 if __name__ == "__main__":
-
     port = int(os.environ.get("PORT", 7860))
 
     demo.launch(
         server_name="0.0.0.0",
         server_port=port,
-        share=False,
         show_error=True,
+        quiet=False,
     )
