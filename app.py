@@ -77,10 +77,11 @@ def chat(request: ChatRequest):
 
     # Normal response (LangChain)
     try:
+        print(f"Provider received: {request.provider}")
 
         reply = get_ai_response(
             question=request.message,
-            provider=request.provider
+            provider=request.provider.lower()
         )
 
     except Exception as e:

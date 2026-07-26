@@ -6,6 +6,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 from openai import RateLimitError
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 load_dotenv()
 
@@ -32,6 +33,15 @@ def get_llm(provider: str):
             model=OPENROUTER_MODEL,
             api_key=os.getenv("OPENROUTER_API_KEY"),
             base_url="https://openrouter.ai/api/v1"
+        )
+
+    elif provider == "gemini":
+        print("========== GEMINI ==========")
+        print("Using model: gemini-2.5-flash")
+
+        return ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            api_key=os.getenv("GEMINI_API_KEY")
         )
 
     else:
