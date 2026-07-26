@@ -83,11 +83,15 @@ def chat(request: ChatRequest):
             provider=request.provider
         )
 
-    except Exception:
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()      
+        print(f"ERROR: {e}")
 
         raise HTTPException(
             status_code=500,
-            detail="Unable to contact AI provider. Please try again later."
+            detail=str(e)
         )
 
     messages.append(

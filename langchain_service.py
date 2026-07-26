@@ -4,25 +4,38 @@ import os
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_groq import ChatGroq
-# from langchain_openrouter import ChatOpenRouter
+from langchain_openai import ChatOpenAI
+from openai import RateLimitError
 
 load_dotenv()
+
+# Change ONLY this line whenever you want to test another OpenRouter model
+OPENROUTER_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"
 
 
 def get_llm(provider: str):
 
     if provider == "groq":
+        print("========== GROQ ==========")
+        print("Using model: llama-3.1-8b-instant")
+
         return ChatGroq(
             model="llama-3.1-8b-instant",
             api_key=os.getenv("GROQ_API_KEY")
         )
 
-    # elif provider == "openrouter":
-    #     return ChatOpenRouter(
-    #         model="openrouter/auto"
-    #     )
+    elif provider == "openrouter":
+        print("========== OPENROUTER ==========")
+        print(f"Using model: {OPENROUTER_MODEL}")
 
-    raise ValueError("Unsupported provider")
+        return ChatOpenAI(
+            model=OPENROUTER_MODEL,
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            base_url="https://openrouter.ai/api/v1"
+        )
+
+    else:
+        raise ValueError("Unsupported provider")
 
 
 def get_ai_response(
@@ -31,6 +44,9 @@ def get_ai_response(
 ) -> str:
 
     llm = get_llm(provider)
+
+    print(f"Provider selected: {provider}")
+    print(llm)
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -43,8 +59,19 @@ def get_ai_response(
 
     chain = prompt | llm | parser
 
-    return chain.invoke(
-        {
-            "question": question
-        }
-    )
+    try:
+        return chain.invoke(
+            {
+                "question": question
+            }
+        )
+
+    except RateLimitError:
+        return (
+            "⚠️ The selected OpenRouter free model is currently busy or rate-limited. "
+            "Please try again after a few minutes or choose another provider/model."
+        )
+
+    except Exception as e:
+        print("ERROR:", e)
+        return f"Error: {str(e)}"

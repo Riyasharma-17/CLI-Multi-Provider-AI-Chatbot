@@ -11,7 +11,8 @@ client = OpenAI(
     api_key=openrouter_api_key
 )
 
-MODEL_NAME = "openrouter/free"
+MODEL_NAME = "poolside/laguna-s-2.1:free"
+
 
 def chat_with_openrouter(messages, temperature):
     try:
