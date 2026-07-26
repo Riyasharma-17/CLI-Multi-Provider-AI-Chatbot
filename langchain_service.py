@@ -12,7 +12,7 @@ load_dotenv()
 
 # Change ONLY this line whenever you want to test another OpenRouter model
 OPENROUTER_MODEL = "google/gemma-4-26b-a4b-it:free"
-
+GEMINI_MODEL = "gemini-3-flash-preview"
 
 def get_llm(provider: str):
 
@@ -36,11 +36,10 @@ def get_llm(provider: str):
         )
 
     elif provider == "gemini":
-        print("========== GEMINI ==========")
-        print("Using model: gemini-2.5-flash")
+        print(f"Using model: {GEMINI_MODEL}")
 
         return ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+            model=GEMINI_MODEL,
             api_key=os.getenv("GEMINI_API_KEY")
         )
 
