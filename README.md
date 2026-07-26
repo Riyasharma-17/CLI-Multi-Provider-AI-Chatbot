@@ -12,9 +12,27 @@ A chatbot that talks to Groq, Gemini, and OpenRouter through one unified interfa
 [![Tests](https://img.shields.io/badge/Tests-10%20passed-brightgreen)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow)]()
 
+🚀 Try it here:
+
+https://multi-provider-ai-chatbot-ui.onrender.com
+
 **[Live UI](https://multi-provider-ai-chatbot-ui.onrender.com) · [Live API](https://cli-multi-provider-ai-chatbot.onrender.com) · [Swagger Docs](https://cli-multi-provider-ai-chatbot.onrender.com/docs)**
 
 ---
+## Why This Project?
+
+Most AI chatbots are tied to a single provider.
+
+This project abstracts Groq, Gemini, and OpenRouter behind one interface so switching providers requires only changing one parameter—not rewriting the application.
+
+The same backend powers:
+
+- CLI
+- REST API
+- Swagger
+- Gradio UI
+
+without duplicating business logic.
 
 ## What Was Built
 
@@ -40,6 +58,21 @@ curl -X POST https://cli-multi-provider-ai-chatbot.onrender.com/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "What is RAG?", "provider": "groq"}'
 ```
+---
+
+## Screenshots
+
+### Gradio Chat Interface
+
+The chatbot provides a clean chat interface with support for switching between multiple LLM providers in real time.
+
+#### Groq
+![Groq Chat](groq.png)
+
+#### Gemini & OpenRouter
+![Gemini and OpenRouter Chat](openrou_gemini.png)
+
+---
 ## Features
 
 - Multi-provider support (Groq, Gemini, OpenRouter)
@@ -277,4 +310,4 @@ docker run -p 8000:8000 -e GROQ_API_KEY=your_key cli-chatbot
 
 ---
 
-*Started as a CLI. Became an API. Got a UI. Deployed to production. Built to understand the full stack of an LLM application — not just the model call.*
+*Started as a CLI. Became an API. Got a UI. Deployed to production. Built to understand the engineering behind LLM applications—not just calling an API.*
