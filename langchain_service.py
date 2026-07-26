@@ -10,7 +10,7 @@ from openai import RateLimitError
 load_dotenv()
 
 # Change ONLY this line whenever you want to test another OpenRouter model
-OPENROUTER_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"
+OPENROUTER_MODEL = "google/gemma-4-26b-a4b-it:free"
 
 
 def get_llm(provider: str):
@@ -73,5 +73,13 @@ def get_ai_response(
         )
 
     except Exception as e:
+        msg = str(e)
+
+        if "ResourceExhausted" in msg or "Worker local total request limit reached" in msg:
+            return (
+                "⚠️ This OpenRouter free model is currently overloaded. "
+                "Please try again in a few minutes or switch to another model."
+            )
+
         print("ERROR:", e)
-        return f"Error: {str(e)}"
+        return f"Error: {msg}"
